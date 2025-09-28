@@ -53,7 +53,17 @@
   vertical-align: top;
   padding: 0;
   font-size: 0.8rem;
+  word-break: break-all; /* 글자가 길어지면 줄바꿈 처리 */
 }
+
+/* [수정] 첫 번째(교시)와 마지막(시간) 열의 너비를 설정합니다. */
+.timetable th:first-child, .timetable td:first-child {
+  width: 12%; 
+}
+.timetable th:last-child, .timetable td:last-child {
+  width: 15%;
+}
+
 
 .timetable th {
   background-color: #f8f9fa;
@@ -157,4 +167,39 @@
   display: flex;
   justify-content: space-around;
   font-size: 0.9rem;
+}
+
+/* --- [핵심 추가] 모바일 화면을 위한 반응형 디자인 --- */
+/* 화면 너비가 768px보다 좁아지면 아래 스타일을 적용합니다. */
+@media (max-width: 768px) {
+  .timetable-wrapper {
+    padding: 0.5rem; /* 모바일에서는 여백을 줄입니다. */
+  }
+
+  .navbar .logo {
+    font-size: 1.1rem; /* 네비게이션 바 로고 글씨 크기 줄이기 */
+  }
+
+  .timetable th, .timetable td {
+    font-size: 10px; /* 테이블 전체 글씨 크기를 줄입니다. */
+  }
+
+  /* '교시'와 '시간' 열의 글씨를 더 작게 만듭니다. */
+  .timetable th:first-child, .timetable td:first-child,
+  .timetable th:last-child, .timetable td:last-child {
+    font-size: 9px; 
+    padding: 0.2rem; /* 내부 여백도 살짝 줄여줍니다. */
+  }
+
+  .class-block {
+    font-size: 9px; /* 시간표 블록 안의 글씨도 작게 만듭니다. */
+    padding: 0.2rem;
+  }
+
+  .add-form {
+    width: 90%;
+    left: 5%;
+    right: 5%;
+    bottom: 5.5rem;
+  }
 }
