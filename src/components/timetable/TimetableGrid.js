@@ -18,7 +18,6 @@ const TimetableGrid = ({ periods, days, classes, deleteClass }) => {
   const [colMeta, setColMeta] = useState({});
   const [ready, setReady] = useState(false);
 
-  // 시간표의 행과 열의 크기와 위치를 계산하는 함수
   const measure = useCallback(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -44,60 +43,62 @@ const TimetableGrid = ({ periods, days, classes, deleteClass }) => {
     setReady(true);
   }, [periods, days]);
 
-  // 컴포넌트가 처음 렌더링되거나 창 크기가 바뀔 때 크기를 다시 계산
   useLayoutEffect(() => {
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
-  }, [measure]); // measure 함수가 변경될 때만 이 효과를 다시 실행
+  }, [measure]);
 
   return (
-    <div className="grid-container" ref={containerRef}>
-      <table className="timetable">
-        <thead>
-          <tr>
-            <th>교시</th>
-            {days.map((d) => (
-              <th key={d} ref={(el) => (dayThRefs.current[d] = el)}>
-                {d}
-              </th>
-            ))}
-            <th>시간</th>
-          </tr>
-        </thead>
-        <tbody>
-          {periods.map((p, idx) => {
-            const duration = t2m(p.end) - t2m(p.start);
-            return (
-              <tr
-                key={idx}
-                ref={(el) => (rowRefs.current[idx] = el)}
-                style={{ height: `${duration * pxPerMinute}px` }}
-              >
-                <td>{p.name}</td>
-                {days.map((day) => (
-                  <td key={day}></td>
-                ))}
-                <td>
-                  {p.start} ~ {p.end}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    // [수정] grid-container가 스크롤을 담당하도록 합니다.
+    <div className="grid-container">
+      {/* [핵심 추가] 테이블과 블록을 감싸는 '캔버스' 역할을 할 div를 추가합니다. */}
+      <div className="timetable-canvas" ref={containerRef}>
+        <table className="timetable">
+          <thead>
+            <tr>
+              <th>교시</th>
+              {days.map((d) => (
+                <th key={d} ref={(el) => (dayThRefs.current[d] = el)}>
+                  {d}
+                </th>
+              ))}
+              <th>시간</th>
+            </tr>
+          </thead>
+          <tbody>
+            {periods.map((p, idx) => {
+              const duration = t2m(p.end) - t2m(p.start);
+              return (
+                <tr
+                  key={idx}
+                  ref={(el) => (rowRefs.current[idx] = el)}
+                  style={{ height: `${duration * pxPerMinute}px` }}
+                >
+                  <td>{p.name}</td>
+                  {days.map((day) => (
+                    <td key={day}></td>
+                  ))}
+                  <td>
+                    {p.start} ~ {p.end}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
 
-      {/* 크기 계산이 완료되면 수업 블록들을 렌더링 */}
-      {ready &&
-        classes.map((cls) => (
-          <ClassBlock
-            key={cls.id}
-            cls={cls}
-            rowMeta={rowMeta}
-            colMeta={colMeta}
-            onDelete={deleteClass}
-          />
-        ))}
+        {ready &&
+          classes.map((cls) => (
+            <ClassBlock
+              key={cls.id}
+              cls={cls}
+              rowMeta={rowMeta}
+              colMeta={colMeta}
+              onDelete={deleteClass}
+            />
+          ))}
+      </div>
     </div>
   );
 };

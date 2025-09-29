@@ -38,8 +38,14 @@
 
 .grid-container {
   position: relative;
-  overflow-x: auto; /* 데스크탑에서도 필요하면 스크롤바가 생기도록 설정 */
+  overflow-x: auto; 
 }
+
+/* [추가] 테이블과 블록을 함께 담을 캔버스 */
+.timetable-canvas {
+  position: relative; /* 블록들의 기준점이 됨 */
+}
+
 
 .timetable {
   width: 100%;
@@ -178,30 +184,41 @@
   .navbar .logo {
     font-size: 1.1rem;
   }
+  
+  /* 스크롤을 담당할 컨테이너 */
+  .grid-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* iOS에서 부드러운 스크롤을 위함 */
+  }
 
-  /* [핵심] 테이블 전체의 최소 너비를 설정하여, 이보다 화면이 좁아지면 스크롤바가 생기도록 합니다. */
+  /* 테이블과 블록을 함께 담을 캔버스 */
+  .timetable-canvas {
+    position: relative; 
+    min-width: 700px; /* 테이블의 최소 너비와 동일하게 설정 */
+  }
+
+  /* 테이블은 이제 캔버스 너비의 100%를 차지합니다. */
   .timetable {
-    min-width: 700px; 
+    width: 100%;
+    min-width: auto; /* 최소 너비는 캔버스가 담당 */
   }
 
   .timetable th, .timetable td {
-    font-size: 11px; /* 글씨 크기를 약간 키워 가독성을 높입니다. */
+    font-size: 11px;
   }
-
-  /* '교시'와 '시간' 열의 너비를 줄이고, 요일 열들이 남은 공간을 나눠 갖도록 합니다. */
+  
   .timetable th:first-child, .timetable td:first-child {
-    width: 50px; /* 고정 너비 */
+    width: 50px;
     min-width: 50px;
   }
   .timetable th:last-child, .timetable td:last-child {
-    width: 65px; /* 고정 너비 */
+    width: 65px;
     min-width: 65px;
   }
 
-  /* --- [핵심 추가] '시간' 열의 숫자 폰트만 더 작게 만듭니다. --- */
   .timetable td:last-child {
     font-size: 9px;
-    line-height: 1.2; /* 줄간격 조정으로 가독성 확보 */
+    line-height: 1.2;
   }
 
   .class-block {
