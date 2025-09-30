@@ -5,6 +5,20 @@
   padding: 1rem;
 }
 
+/* 시간표 페이지 제목 스타일 */
+.page-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+  padding-left: 0.5rem;
+  
+  /* [추가] 제목이 항상 가로로 표시되도록 줄 바꿈을 방지합니다. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .navbar {
   display: flex;
   justify-content: space-between;
@@ -41,9 +55,8 @@
   overflow-x: auto; 
 }
 
-/* [추가] 테이블과 블록을 함께 담을 캔버스 */
 .timetable-canvas {
-  position: relative; /* 블록들의 기준점이 됨 */
+  position: relative; 
 }
 
 
@@ -185,22 +198,19 @@
     font-size: 1.1rem;
   }
   
-  /* 스크롤을 담당할 컨테이너 */
   .grid-container {
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch; /* iOS에서 부드러운 스크롤을 위함 */
+    -webkit-overflow-scrolling: touch; 
   }
 
-  /* 테이블과 블록을 함께 담을 캔버스 */
   .timetable-canvas {
     position: relative; 
-    min-width: 700px; /* 테이블의 최소 너비와 동일하게 설정 */
+    min-width: 700px; 
   }
 
-  /* 테이블은 이제 캔버스 너비의 100%를 차지합니다. */
   .timetable {
     width: 100%;
-    min-width: auto; /* 최소 너비는 캔버스가 담당 */
+    min-width: auto;
   }
 
   .timetable th, .timetable td {

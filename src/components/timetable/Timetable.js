@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import { useTimetableData } from "../../hooks/useTimetableData";
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../supabaseClient';
+import { useTimetableData } from '../../hooks/useTimetableData';
 import TimetableGrid from "./TimetableGrid";
 import ClassBlock from "./ClassBlock";
 import AddScheduleForm from "./AddScheduleForm";
-import "../Timetable.css"; // CSS 파일은 한 단계 위 폴더에 있습니다.
+import "../Timetable.css";
 
 const periods = [
   { name: "0교시", start: "08:00", end: "08:50" }, { name: "쉬는시간", start: "08:50", end: "09:00" },
@@ -19,52 +20,78 @@ const periods = [
 ];
 const days = ["월", "화", "수", "목", "금", "토", "일"];
 
-export default function Timetable({ user }) {
-  const {
-    studentName, loading, saving, classes, hasChanges,
-    addClass, deleteClass, handleSaveChanges,
-  } = useTimetableData(user);
-  
+export default function Timetable({ user, isAdminView = false }) {
+  const { classes, loading, saving, hasChanges, addClass, deleteClass, handleSaveChanges, studentName } = useTimetableData(user, isAdminView);
+  const [adminClasses, setAdminClasses] = useState([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminStudentName, setAdminStudentName] = useState('');
+
+  useEffect(() => {
+    if (isAdminView) {
+      const fetchStudentSchedule = async () => {
+        setAdminLoading(true);
+        const { data } = await supabase.rpc('get_schedule_for_student', { student_id: user.id });
+        const formatted = (data || []).map((item) => ({
+          ...item,
+          start: item.start_time?.substring(0, 5),
+          end: item.end_time?.substring(0, 5),
+        }));
+        setAdminClasses(formatted);
+        setAdminStudentName(user.name || '');
+        setAdminLoading(false);
+      };
+      fetchStudentSchedule();
+    }
+  }, [user, isAdminView]);
+
   const [showForm, setShowForm] = useState(false);
 
-  const handleLogout = async () => {
-    // supabaseClient를 직접 임포트하지 않기 위해 App.js 등으로 옮기는 것이 좋습니다.
-    const { supabase } = await import("../../supabaseClient");
-    await supabase.auth.signOut();
-  };
+  const displayClasses = isAdminView ? adminClasses : classes;
+  const isLoading = isAdminView ? adminLoading : loading;
+  const displayName = isAdminView ? adminStudentName : studentName;
 
-  if (loading) {
+  if (isLoading) {
     return <div>학생 정보를 불러오는 중입니다...</div>;
   }
 
   return (
     <div className="timetable-wrapper">
-      <nav className="navbar">
-        <div className="logo">🏫 {studentName} 님의 시간표</div>
-        <button onClick={handleLogout} className="logout-btn">로그아웃</button>
-      </nav>
+      {/* [수정] 네비게이션 바를 삭제하고, 페이지 제목을 추가합니다. */}
+      <h1 className="page-title">🏫 {displayName} 님의 시간표</h1>
 
-      <TimetableGrid periods={periods} days={days} classes={classes} ClassBlockComponent={ClassBlock} deleteClass={deleteClass} />
+      <TimetableGrid 
+        periods={periods} 
+        days={days} 
+        classes={displayClasses} 
+        ClassBlockComponent={ClassBlock} 
+        // [수정] 관리자 모드에서는 삭제가 안 되도록 빈 함수를 전달합니다.
+        deleteClass={isAdminView ? () => {} : deleteClass} 
+      />
 
-      <div className="floating-buttons">
-        {hasChanges && (
-          <button className="save-btn" onClick={handleSaveChanges} disabled={saving}>
-            {saving ? '저장 중...' : '변경사항 저장'}
-          </button>
-        )}
-        <button className="toggle-btn" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? "닫기" : "시간표 추가"}
-        </button>
-      </div>
+      {/* [수정] 관리자 모드에서는 추가/저장 버튼이 보이지 않습니다. */}
+      {!isAdminView && (
+        <>
+          <div className="floating-buttons">
+            {hasChanges && (
+              <button className="save-btn" onClick={handleSaveChanges} disabled={saving}>
+                {saving ? '저장 중...' : '변경사항 저장'}
+              </button>
+            )}
+            <button className="toggle-btn" onClick={() => setShowForm((v) => !v)}>
+              {showForm ? "닫기" : "시간표 추가"}
+            </button>
+          </div>
 
-      {showForm && (
-        <AddScheduleForm 
-          days={days}
-          onAddClass={(newClassInfo) => {
-            addClass(newClassInfo);
-            setShowForm(false);
-          }}
-        />
+          {showForm && (
+            <AddScheduleForm 
+              days={days}
+              onAddClass={(newClassInfo) => {
+                addClass(newClassInfo);
+                setShowForm(false);
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );

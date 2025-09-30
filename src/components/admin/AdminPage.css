@@ -1,0 +1,64 @@
+.admin-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
+
+.student-sidebar {
+  width: 300px; /* [수정] 사이드바 너비를 250px에서 300px로 늘렸습니다. */
+  border-right: 1px solid #e0e0e0;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  overflow-y: auto;
+}
+
+.student-sidebar h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 0.9rem; 
+}
+
+.student-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.student-sidebar li {
+  padding: 0.7rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-weight: 500;
+  font-size: 0.80rem;
+
+  /* [수정] 이름이 잘리지 않고 모두 표시되도록 관련 속성을 삭제했습니다. */
+  /* white-space: nowrap; */
+  /* overflow: hidden; */
+  /* text-overflow: ellipsis; */
+}
+
+.student-sidebar li:hover {
+  background-color: #e9ecef;
+}
+
+.student-sidebar li.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.timetable-view {
+  flex-grow: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.timetable-view .placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  font-size: 1.2rem;
+  color: #757575;
+}
+
