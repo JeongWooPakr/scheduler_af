@@ -10,7 +10,7 @@ const t2m = (t) => {
   return h * 60 + m;
 };
 
-export const useTimetableData = (user) => {
+export const useTimetableData = (user, isAdminView = false) => {
   const [studentName, setStudentName] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -26,6 +26,28 @@ export const useTimetableData = (user) => {
       }
       setLoading(true);
 
+      if (isAdminView) {
+        const { data, error } = await supabase.rpc('get_schedule_for_student', {
+          student_id: user.id,
+        });
+
+        if (error) {
+          console.error("Error fetching student schedule:", error);
+        } else {
+          const formatted = (data || []).map((item) => ({
+            ...item,
+            start: item.start_time?.substring(0, 5),
+            end: item.end_time?.substring(0, 5),
+          }));
+          setStudentName(user.name || '');
+          setClasses(formatted);
+        }
+
+        setLoading(false);
+        setHasChanges(false);
+        return;
+      }
+
       // Supabase 함수를 단 한 번만 호출하여 이름과 시간표를 동시에 가져옵니다.
       const { data, error } = await supabase.rpc('get_user_timetable_data', {
         p_user_id: user.id
@@ -35,7 +57,7 @@ export const useTimetableData = (user) => {
         console.error("Error fetching timetable data:", error);
       } else if (data) {
         // 한 번의 응답으로 이름과 시간표를 모두 설정합니다.
-        setStudentName(data.student_name || user.email.split('@')[0]);
+        setStudentName(data.student_name || user.email?.split('@')[0] || '');
         
         const formatted = (data.schedules || []).map((item) => ({
           ...item,
@@ -50,7 +72,7 @@ export const useTimetableData = (user) => {
     };
 
     fetchData();
-  }, [user]);
+  }, [user, isAdminView]);
 
   // 일정 추가 함수
   const addClass = useCallback((newClassInfo) => {
