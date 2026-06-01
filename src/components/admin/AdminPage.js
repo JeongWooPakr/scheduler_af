@@ -9,6 +9,7 @@ const AdminPage = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
   // [추가] 현재 활성화된 뷰를 관리하는 상태 ('timetable' 또는 'counseling')
   const [activeView, setActiveView] = useState('timetable');
 
@@ -19,7 +20,7 @@ const AdminPage = () => {
         setError('학생 목록을 불러오는데 실패했습니다.');
         console.error(error);
       } else {
-        setStudents(data);
+        setStudents(data || []);
       }
       setLoading(false);
     };
@@ -30,6 +31,11 @@ const AdminPage = () => {
     const mockUser = { id: student.id, name: student.name };
     setSelectedStudent(mockUser);
   };
+
+  const normalizedStudentSearch = studentSearch.trim().toLowerCase();
+  const filteredStudents = students.filter((student) =>
+    (student.name || '').toLowerCase().includes(normalizedStudentSearch)
+  );
 
   if (loading) return <div>로딩 중...</div>;
   if (error) return <div>{error}</div>;
@@ -57,8 +63,16 @@ const AdminPage = () => {
         {activeView === 'timetable' && (
           <>
             <h2>학생 목록</h2>
+            <input
+              type="search"
+              className="student-search-input"
+              placeholder="학생 이름 검색"
+              value={studentSearch}
+              onChange={(event) => setStudentSearch(event.target.value)}
+              aria-label="학생 이름 검색"
+            />
             <ul>
-              {students.map((student) => (
+              {filteredStudents.map((student) => (
                 <li
                   key={student.id}
                   onClick={() => handleStudentSelect(student)}
@@ -68,6 +82,9 @@ const AdminPage = () => {
                 </li>
               ))}
             </ul>
+            {filteredStudents.length === 0 && (
+              <p className="student-search-empty">검색 결과가 없습니다.</p>
+            )}
           </>
         )}
       </aside>
