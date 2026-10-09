@@ -6,6 +6,11 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [phoneDigits, setPhoneDigits] = useState('');
 
+  const handleCodeChange = (e) => {
+    const sanitizedCode = e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10);
+    setPhoneDigits(sanitizedCode);
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -22,7 +27,7 @@ export default function Login() {
       if (error) throw error;
       // 로그인 성공 알림은 굳이 필요 없으므로 제거했습니다.
     } catch (error) {
-      alert('휴대폰 번호 4자리를 다시 확인해주세요.');
+      alert('로그인 코드(문자/숫자 최대 10자리)를 다시 확인해주세요.');
       console.error('Login Error:', error.message);
     } finally {
       setLoading(false);
@@ -49,11 +54,13 @@ export default function Login() {
           <div className="input-group">
             <i className="fa-solid fa-phone"></i>
             <input
-              type="tel"
-              placeholder="휴대폰 뒷자리 4개"
+              type="text"
+              placeholder="문자/숫자 최대 10자리"
               value={phoneDigits}
-              onChange={(e) => setPhoneDigits(e.target.value)}
-              maxLength="4"
+              onChange={handleCodeChange}
+              maxLength="10"
+              autoCapitalize="none"
+              autoCorrect="off"
               required
             />
           </div>
