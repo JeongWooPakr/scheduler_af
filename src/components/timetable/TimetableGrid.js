@@ -1,7 +1,8 @@
 import React, { useRef, useLayoutEffect, useState, useCallback } from 'react';
 import ClassBlock from './ClassBlock'; // 수업 블록 컴포넌트를 불러옵니다.
 
-const pxPerMinute = 2;
+const DESKTOP_PX_PER_MINUTE = 2;
+const MOBILE_PX_PER_MINUTE = 0.9;
 
 // "HH:mm" 형식의 시간을 분으로 변환하는 함수
 const t2m = (t) => {
@@ -17,6 +18,15 @@ const TimetableGrid = ({ periods, days, classes, deleteClass }) => {
   const [rowMeta, setRowMeta] = useState([]);
   const [colMeta, setColMeta] = useState({});
   const [ready, setReady] = useState(false);
+  const [compact, setCompact] = useState(() => window.matchMedia('(max-width: 768px)').matches);
+
+  useLayoutEffect(() => {
+    const media = window.matchMedia('(max-width: 768px)');
+    const update = () => setCompact(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
 
   const measure = useCallback(() => {
     const container = containerRef.current;
@@ -51,7 +61,7 @@ const TimetableGrid = ({ periods, days, classes, deleteClass }) => {
 
   return (
     // [수정] grid-container가 스크롤을 담당하도록 합니다.
-    <div className="grid-container">
+    <div className={`grid-container${compact ? ' is-compact' : ''}`}>
       {/* [핵심 추가] 테이블과 블록을 감싸는 '캔버스' 역할을 할 div를 추가합니다. */}
       <div className="timetable-canvas" ref={containerRef}>
         <table className="timetable">
@@ -73,14 +83,14 @@ const TimetableGrid = ({ periods, days, classes, deleteClass }) => {
                 <tr
                   key={idx}
                   ref={(el) => (rowRefs.current[idx] = el)}
-                  style={{ height: `${duration * pxPerMinute}px` }}
+                  style={{ height: `${duration * (compact ? MOBILE_PX_PER_MINUTE : DESKTOP_PX_PER_MINUTE)}px` }}
                 >
                   <td>{p.name}</td>
                   {days.map((day) => (
                     <td key={day}></td>
                   ))}
-                  <td>
-                    {p.start} ~ {p.end}
+                  <td className="period-time">
+                    <span>{p.start}</span><span className="period-time-separator">~</span><span>{p.end}</span>
                   </td>
                 </tr>
               );
