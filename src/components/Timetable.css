@@ -225,14 +225,14 @@
   }
 
   .timetable th:first-child, .timetable td:first-child {
-    width: 52px;
-    min-width: 52px;
+    width: 34px;
+    min-width: 34px;
   }
 
   .timetable th:last-child, .timetable td:last-child {
     display: table-cell;
-    width: 50px;
-    min-width: 50px;
+    width: 42px;
+    min-width: 42px;
   }
 
   .timetable th {
