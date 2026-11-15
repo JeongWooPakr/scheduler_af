@@ -57,7 +57,7 @@ const TimetableGrid = ({ periods, days, classes, deleteClass }) => {
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
-  }, [measure]);
+  }, [measure, compact]);
 
   return (
     // [수정] grid-container가 스크롤을 담당하도록 합니다.
@@ -79,18 +79,27 @@ const TimetableGrid = ({ periods, days, classes, deleteClass }) => {
           <tbody>
             {periods.map((p, idx) => {
               const duration = t2m(p.end) - t2m(p.start);
+              const isBreak = p.name === '쉬는시간';
+              const periodLabel = isBreak ? '' : p.name.replace('교시', '');
               return (
                 <tr
                   key={idx}
+                  className={isBreak ? 'is-break' : undefined}
                   ref={(el) => (rowRefs.current[idx] = el)}
-                  style={{ height: `${duration * (compact ? MOBILE_PX_PER_MINUTE : DESKTOP_PX_PER_MINUTE)}px` }}
+                  style={{
+                    height: `${isBreak ? (compact ? 4 : 7) : duration * (compact ? MOBILE_PX_PER_MINUTE : DESKTOP_PX_PER_MINUTE)}px`,
+                  }}
                 >
-                  <td>{p.name}</td>
+                  <td>{periodLabel}</td>
                   {days.map((day) => (
                     <td key={day}></td>
                   ))}
                   <td className="period-time">
-                    <span>{p.start}</span><span className="period-time-separator">~</span><span>{p.end}</span>
+                    {!isBreak && (
+                      <>
+                        <span>{p.start}</span><span className="period-time-separator">~</span><span>{p.end}</span>
+                      </>
+                    )}
                   </td>
                 </tr>
               );

@@ -91,6 +91,12 @@
   background-color: #fff;
 }
 
+.timetable tr.is-break td {
+  background-color: #f0f1f2;
+  padding-block: 0;
+  line-height: 0;
+}
+
 .class-block {
   position: absolute;
   border-radius: 4px;
