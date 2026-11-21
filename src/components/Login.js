@@ -17,7 +17,8 @@ export default function Login() {
     try {
       setLoading(true);
       const email = `${phoneDigits}@study.com`;
-      const password = phoneDigits;
+      // 비밀번호 규칙: af + 로그인 코드 (예: 0353 -> af0353)
+      const password = `af${phoneDigits}`;
 
       const { error } = await supabase.auth.signInWithPassword({
         email: email,

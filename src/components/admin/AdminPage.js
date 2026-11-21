@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import Timetable from '../timetable/Timetable';
 import CounselingScheduler from './CounselingScheduler'; // 새로 만든 컴포넌트
+import StudentInfoManager from './StudentInfoManager';
+import AttendanceCheck from './AttendanceCheck';
 import './AdminPage.css';
 
 const AdminPage = () => {
@@ -57,6 +59,18 @@ const AdminPage = () => {
           >
             상담 시간표 생성
           </button>
+          <button
+            onClick={() => setActiveView('studentInfo')}
+            className={activeView === 'studentInfo' ? 'active' : ''}
+          >
+            학생 정보 관리
+          </button>
+          <button
+            onClick={() => setActiveView('attendance')}
+            className={activeView === 'attendance' ? 'active' : ''}
+          >
+            미등원 확인
+          </button>
         </div>
 
         {/* 학생 시간표 조회 뷰일 때만 학생 목록을 보여줍니다. */}
@@ -95,6 +109,10 @@ const AdminPage = () => {
           ) : (
             <div className="placeholder">학생을 선택하면 시간표가 표시됩니다.</div>
           )
+        ) : activeView === 'studentInfo' ? (
+          <StudentInfoManager students={students} />
+        ) : activeView === 'attendance' ? (
+          <AttendanceCheck />
         ) : (
           // 상담 시간표 생성 뷰
           <CounselingScheduler students={students} />

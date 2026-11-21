@@ -1,0 +1,169 @@
+.info-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.info-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-toolbar h2 {
+  margin: 0 0.75rem 0 0;
+  font-size: 1.1rem;
+}
+
+.info-search {
+  width: 240px;
+  margin-bottom: 0;
+}
+
+.info-check {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.info-btn {
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #007bff;
+  border-radius: 6px;
+  background: #007bff;
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.info-btn.secondary {
+  background: #fff;
+  color: #007bff;
+}
+
+.info-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.info-message {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.info-message.subtle {
+  color: #757575;
+}
+
+.info-message.error {
+  color: #c62828;
+}
+
+.info-table-wrap {
+  overflow-x: auto;
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.info-table th,
+.info-table td {
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0.35rem 0.4rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.info-table th {
+  background: #f5f6f8;
+  font-weight: 600;
+}
+
+.info-table td.center {
+  text-align: center;
+}
+
+.info-table td.name {
+  font-weight: 600;
+}
+
+.info-table tr.dirty td {
+  background: #fff8e1;
+}
+
+.info-table input,
+.info-table select {
+  width: 110px;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid #d4d8dd;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  box-sizing: border-box;
+}
+
+.info-table input[type='checkbox'] {
+  width: auto;
+}
+
+.info-table input.narrow {
+  width: 60px;
+}
+
+.info-table input.wide {
+  width: 220px;
+}
+
+.att-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.att-summary .ok {
+  color: #2e7d32;
+}
+
+.att-summary .danger {
+  color: #c62828;
+}
+
+.att-group h3,
+.att-history h3 {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.att-group.danger h3 {
+  color: #c62828;
+}
+
+.att-group.warn h3 {
+  color: #ef6c00;
+}
+
+.att-group.muted h3 {
+  color: #757575;
+}
+
+.att-history ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}
+
+.att-history li {
+  margin-bottom: 0.4rem;
+}
+
+.att-missing {
+  color: #c62828;
+  margin-top: 0.15rem;
+}

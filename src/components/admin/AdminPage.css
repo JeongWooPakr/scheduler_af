@@ -86,3 +86,25 @@
   font-size: 1.2rem;
   color: #757575;
 }
+
+.view-switcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.view-switcher button {
+  padding: 0.5rem 0.4rem;
+  border: 1px solid #d4d8dd;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.view-switcher button.active {
+  background: #007bff;
+  border-color: #007bff;
+  color: #fff;
+}
