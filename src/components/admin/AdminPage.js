@@ -4,6 +4,7 @@ import Timetable from '../timetable/Timetable';
 import CounselingScheduler from './CounselingScheduler'; // 새로 만든 컴포넌트
 import StudentInfoManager from './StudentInfoManager';
 import AttendanceCheck from './AttendanceCheck';
+import StudentConduct from './StudentConduct';
 import './AdminPage.css';
 
 const AdminPage = () => {
@@ -71,6 +72,12 @@ const AdminPage = () => {
           >
             등원 확인
           </button>
+          <button
+            onClick={() => setActiveView('conduct')}
+            className={activeView === 'conduct' ? 'active' : ''}
+          >
+            상벌점
+          </button>
         </div>
 
         {/* 학생 시간표 조회 뷰일 때만 학생 목록을 보여줍니다. */}
@@ -113,6 +120,8 @@ const AdminPage = () => {
           <StudentInfoManager students={students} />
         ) : activeView === 'attendance' ? (
           <AttendanceCheck />
+        ) : activeView === 'conduct' ? (
+          <StudentConduct students={students} />
         ) : (
           // 상담 시간표 생성 뷰
           <CounselingScheduler students={students} />

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
+import { PENALTY_POINTS } from './conductRules';
 import './StudentInfo.css';
 
 // 확인 시각 (교시 시작 + 5분 여유)
@@ -35,6 +36,8 @@ const AttendanceCheck = () => {
   const [error, setError] = useState('');
   const [history, setHistory] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [lateIds, setLateIds] = useState(new Set());
+  const [lateMessage, setLateMessage] = useState('');
 
   const loadHistory = useCallback(async () => {
     const { data } = await supabase
@@ -61,6 +64,53 @@ const AttendanceCheck = () => {
     }
     setResult(data);
     setSelected(null);
+    setLateIds(new Set());
+    setLateMessage('');
+  };
+
+  const toggleLate = (id) => {
+    setLateIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // 체크한 미등원 학생을 지각으로 표시 (같은 날 이미 지각이면 건너뜀)
+  const markLate = async () => {
+    const ids = [...lateIds];
+    if (!ids.length) return;
+    // eslint-disable-next-line no-alert
+    if (!window.confirm(`${ids.length}명을 지각으로 표시하겠습니까? (벌점 ${PENALTY_POINTS['지각']}점씩)`)) return;
+    const date = result?.date || todayKst();
+    const { data: existing } = await supabase
+      .from('student_points')
+      .select('user_id')
+      .eq('kind', '지각')
+      .eq('occurred_on', date)
+      .in('user_id', ids);
+    const already = new Set((existing || []).map((r) => r.user_id));
+    const toInsert = ids.filter((id) => !already.has(id));
+    if (toInsert.length) {
+      const { error: insertError } = await supabase.from('student_points').insert(
+        toInsert.map((id) => ({
+          user_id: id,
+          kind: '지각',
+          points: PENALTY_POINTS['지각'],
+          note: `${result?.time || ''} 등원 확인`,
+          occurred_on: date,
+        }))
+      );
+      if (insertError) {
+        setLateMessage(`지각 기록 실패: ${insertError.message}`);
+        return;
+      }
+    }
+    setLateIds(new Set());
+    setLateMessage(
+      `${toInsert.length}명 지각 처리했습니다.${already.size ? ` (${already.size}명은 오늘 이미 지각으로 기록돼 있어 건너뜀)` : ''}`
+    );
   };
 
   const rows = result?.rows || [];
@@ -91,7 +141,7 @@ const AttendanceCheck = () => {
         ))}
       </div>
       <p className="info-message subtle">
-        관리형으로 체크된 학생 중, 확인 시각에 시간표가 비어 있는데(학원에 있어야 하는 시간) Awesome Manager에서 "입실"이 아닌 학생을 보여 줍니다.
+        미등원 명단에서 학생을 체크하고 "지각으로 표시"를 누르면 벌점이 쌓입니다. 관리형으로 체크된 학생 중, 확인 시각에 시간표가 비어 있는데(학원에 있어야 하는 시간) Awesome Manager에서 "입실"이 아닌 학생을 보여 줍니다.
         시각 버튼은 오늘 요일 시간표 기준이고, 좌석 상태는 지금 상태입니다.
       </p>
 
@@ -123,6 +173,8 @@ const AttendanceCheck = () => {
               title={`${selectedFilter.label} (${rows.filter(selectedFilter.match).length})`}
               tone={selectedFilter.tone}
               list={rows.filter(selectedFilter.match)}
+              lateIds={lateIds}
+              onToggleLate={toggleLate}
             />
           ) : (
             GROUPS.map((group) => {
@@ -134,10 +186,25 @@ const AttendanceCheck = () => {
                   title={`${group.title} (${list.length})`}
                   tone={group.tone}
                   list={list}
+                  lateIds={lateIds}
+                  onToggleLate={toggleLate}
                 />
               );
             })
           )}
+
+          {lateIds.size > 0 && (
+            <div className="late-bar">
+              <span>미등원 {lateIds.size}명 선택됨</span>
+              <button className="info-btn danger-btn" onClick={markLate}>
+                지각으로 표시
+              </button>
+              <button className="info-btn secondary" onClick={() => setLateIds(new Set())}>
+                선택 해제
+              </button>
+            </div>
+          )}
+          {lateMessage && <p className="info-message">{lateMessage}</p>}
 
           {expected.length > 0 && expected.length === present.length && (
             <p className="info-message">등원 대상 학생이 모두 입실했습니다.</p>
@@ -164,7 +231,9 @@ const AttendanceCheck = () => {
   );
 };
 
-const AttendanceTable = ({ title, tone, list }) => (
+const AttendanceTable = ({ title, tone, list, lateIds, onToggleLate }) => {
+  const canMark = list.some((r) => r.result === '미등원');
+  return (
   <section className={`att-group ${tone}`}>
     <h3>{title}</h3>
     {list.length === 0 ? (
@@ -173,6 +242,7 @@ const AttendanceTable = ({ title, tone, list }) => (
       <table className="info-table">
         <thead>
           <tr>
+            {canMark && <th>지각</th>}
             <th>좌석</th>
             <th>이름</th>
             <th>결과</th>
@@ -185,6 +255,13 @@ const AttendanceTable = ({ title, tone, list }) => (
         <tbody>
           {list.map((r) => (
             <tr key={r.user_id}>
+              {canMark && (
+                <td className="center">
+                  {r.result === '미등원' && (
+                    <input type="checkbox" checked={lateIds.has(r.user_id)} onChange={() => onToggleLate(r.user_id)} />
+                  )}
+                </td>
+              )}
               <td>{r.seat_no ?? '-'}</td>
               <td className="name">
                 {r.name}
@@ -201,6 +278,7 @@ const AttendanceTable = ({ title, tone, list }) => (
       </table>
     )}
   </section>
-);
+  );
+};
 
 export default AttendanceCheck;

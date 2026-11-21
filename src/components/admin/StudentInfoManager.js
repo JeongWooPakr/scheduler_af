@@ -28,7 +28,6 @@ const StudentInfoManager = ({ students }) => {
   const [managedOnly, setManagedOnly] = useState(false);
   const [notionByName, setNotionByName] = useState({});
   const [notionStatus, setNotionStatus] = useState('');
-  const [previewId, setPreviewId] = useState(null);
 
   // 노션 "학생 상담 리스트"에서 기본정보·최근 상담을 읽어 옵니다. (읽기 전용)
   const loadNotion = async (round = 1) => {
@@ -217,7 +216,6 @@ const StudentInfoManager = ({ students }) => {
               <th>최근 상담 (노션)</th>
               <th>학생 연락처</th>
               <th>학부모 연락처</th>
-              <th>학부모 문자</th>
             </tr>
           </thead>
           <tbody>
@@ -289,30 +287,7 @@ const StudentInfoManager = ({ students }) => {
                     onChange={(e) => updateField(student.id, 'parent_phone', e.target.value)}
                   />
                 </td>
-                <td>
-                  <button
-                    className="info-btn secondary small"
-                    onClick={() => setPreviewId(previewId === student.id ? null : student.id)}
-                  >
-                    {previewId === student.id ? '닫기' : '미리보기'}
-                  </button>
-                </td>
               </tr>
-              {previewId === student.id && (
-                <tr className="preview-row">
-                  <td colSpan={13}>
-                    <textarea
-                      className="parent-preview"
-                      readOnly
-                      rows={6}
-                      value={buildParentMessage(student.name, notionByName[nameKey(student.name)])}
-                    />
-                    <p className="info-message subtle">
-                      진행률은 노션 교재 표(과목 | 교재 | 총량)와 상담 기록의 쪽수·강수로 계산합니다. 문자 발송 연동 전이라 미리보기만 됩니다.
-                    </p>
-                  </td>
-                </tr>
-              )}
               </React.Fragment>
             ))}
           </tbody>
@@ -355,23 +330,6 @@ const NotionCells = ({ notion }) => {
     </>
   );
 };
-
-// 학부모 문자 내용. 교재 진행률(%)은 여기에만 넣습니다.
-function buildParentMessage(name, notion) {
-  const lines = [`[어썸팩토리 철산] ${name} 학생 학습 진행 안내`];
-  const materials = (notion?.materials || []).filter((m) => m.total);
-  if (!materials.length) {
-    lines.push('(노션에 교재 표가 아직 없어 진행률을 계산할 수 없습니다)');
-  } else {
-    materials.forEach((m) => {
-      const unit = m.unit === '강' ? '강' : 'p';
-      const progress = m.current == null ? '진행 기록 없음' : `${m.current}/${m.total}${unit} (${m.percent}%)`;
-      lines.push(`- ${m.subject} ${m.title}: ${progress}`);
-    });
-  }
-  if (notion?.latestDate) lines.push(`최근 상담: ${notion.latestDate}`);
-  return lines.join('\n');
-}
 
 // "김 민 경"과 "김민경"을 같은 이름으로 봅니다.
 function nameKey(name) {

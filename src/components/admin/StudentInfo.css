@@ -235,3 +235,73 @@
   border-color: #007bff;
   background: #e8f1ff;
 }
+
+.info-btn.danger-btn {
+  border-color: #c62828;
+  background: #fff;
+  color: #c62828;
+}
+
+.info-btn.danger-btn:hover:not(:disabled) {
+  background: #c62828;
+  color: #fff;
+}
+
+.late-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: #fff3f3;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.conduct-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafbfc;
+}
+
+.conduct-entry select,
+.conduct-entry input {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #d4d8dd;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.conduct-note {
+  width: 180px;
+}
+
+.info-table tr.over-cutline td {
+  background: #ffebee;
+  color: #b71c1c;
+  font-weight: 600;
+}
+
+.conduct-history {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}
+
+.conduct-history li {
+  margin-bottom: 0.25rem;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  color: #c62828;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
