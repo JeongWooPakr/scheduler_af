@@ -119,7 +119,7 @@ const AdminPage = () => {
         ) : activeView === 'studentInfo' ? (
           <StudentInfoManager students={students} />
         ) : activeView === 'attendance' ? (
-          <AttendanceCheck />
+          <AttendanceCheck students={students} />
         ) : activeView === 'conduct' ? (
           <StudentConduct students={students} />
         ) : (

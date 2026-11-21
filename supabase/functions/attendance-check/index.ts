@@ -191,12 +191,34 @@ Deno.serve(async (req) => {
       busyById.set(s.user_id, list);
     }
 
+    // 오늘 등록된 예외 (학부모가 미리 알려 준 결석·지각). 시간이 비어 있으면 하루 종일.
+    const { data: exceptions } = ids.length
+      ? await admin
+        .from("attendance_exceptions")
+        .select("user_id, start_time, end_time, reason")
+        .eq("on_date", kst.date)
+        .in("user_id", ids)
+      : { data: [] as { user_id: string; start_time: string | null; end_time: string | null; reason: string | null }[] };
+    const exceptionsById = new Map<string, { start: number; end: number; reason: string }[]>();
+    for (const e of exceptions || []) {
+      const list = exceptionsById.get(e.user_id) || [];
+      list.push({
+        start: e.start_time ? toMinutes(e.start_time) : 0,
+        end: e.end_time ? toMinutes(e.end_time) : 24 * 60,
+        reason: e.reason || "",
+      });
+      exceptionsById.set(e.user_id, list);
+    }
+
     const seatByNo = new Map(seats.map((s) => [s.seatNo, s]));
     const seatByName = new Map(seats.filter((s) => s.name).map((s) => [s.name, s]));
 
     const rows = (infos || []).map((info) => {
       const name = nameById.get(info.user_id) || "";
       const busy = (busyById.get(info.user_id) || []).find((b) => b.start <= checkMinutes && checkMinutes < b.end);
+      const excused = (exceptionsById.get(info.user_id) || []).find(
+        (e) => e.start <= checkMinutes && checkMinutes < e.end,
+      );
 
       // 좌석 번호 우선, 안 맞으면 이름으로 찾기
       let seat = info.seat_no ? seatByNo.get(info.seat_no) : undefined;
@@ -204,6 +226,7 @@ Deno.serve(async (req) => {
 
       let result: string;
       if (busy) result = "외부일정";
+      else if (excused) result = "예외";
       else if (!seat || !seat.name) result = "좌석없음";
       else if (seat.state === "입실") result = "등원";
       else if (seat.state === "외출") result = "외출";
@@ -216,6 +239,7 @@ Deno.serve(async (req) => {
         af_name: seat?.name || "",
         af_state: seat?.state || "",
         busy_title: busy?.title || "",
+        exception_reason: excused ? excused.reason || "예외" : "",
         student_phone: info.student_phone || "",
         parent_phone: info.parent_phone || "",
         result,
@@ -225,7 +249,7 @@ Deno.serve(async (req) => {
     rows.sort((a, b) => (a.seat_no ?? 999) - (b.seat_no ?? 999));
 
     if (body.record || isCron) {
-      const expected = rows.filter((r) => r.result !== "외부일정");
+      const expected = rows.filter((r) => r.result !== "외부일정" && r.result !== "예외");
       if (expected.length) {
         const { error } = await admin.from("attendance_checks").insert(
           expected.map((r) => ({

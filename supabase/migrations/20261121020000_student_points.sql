@@ -57,3 +57,6 @@ alter table public.conduct_resets enable row level security;
 drop policy if exists "conduct_resets admin all" on public.conduct_resets;
 create policy "conduct_resets admin all" on public.conduct_resets
   for all using (public.is_admin()) with check (public.is_admin());
+
+-- 지각을 교시(확인 시각)마다 따로 기록하기 위한 칸
+alter table public.student_points add column if not exists check_slot text;  -- morning / lunch / dinner
