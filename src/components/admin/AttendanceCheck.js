@@ -38,6 +38,13 @@ const AttendanceCheck = () => {
   const [selected, setSelected] = useState(null);
   const [lateIds, setLateIds] = useState(new Set());
   const [lateMessage, setLateMessage] = useState('');
+  const [lateDone, setLateDone] = useState(new Set()); // 이 날짜에 이미 지각 처리된 학생
+  const [activeSlot, setActiveSlot] = useState(null);
+
+  const loadLateDone = useCallback(async (date) => {
+    const { data } = await supabase.from('student_points').select('user_id').eq('kind', '지각').eq('occurred_on', date);
+    setLateDone(new Set((data || []).map((r) => r.user_id)));
+  }, []);
 
   const loadHistory = useCallback(async () => {
     const { data } = await supabase
@@ -55,6 +62,7 @@ const AttendanceCheck = () => {
   const runCheck = async (preset) => {
     setLoading(true);
     setError('');
+    setActiveSlot(preset ? preset.slot : 'manual');
     const body = preset ? { time: preset.time, slot: preset.slot } : { slot: 'manual' };
     const { data, error: invokeError } = await supabase.functions.invoke('attendance-check', { body });
     setLoading(false);
@@ -66,6 +74,7 @@ const AttendanceCheck = () => {
     setSelected(null);
     setLateIds(new Set());
     setLateMessage('');
+    loadLateDone(data.date || todayKst());
   };
 
   const toggleLate = (id) => {
@@ -108,6 +117,7 @@ const AttendanceCheck = () => {
       }
     }
     setLateIds(new Set());
+    setLateDone((prev) => new Set([...prev, ...ids]));
     setLateMessage(
       `${toInsert.length}명 지각 처리했습니다.${already.size ? ` (${already.size}명은 오늘 이미 지각으로 기록돼 있어 건너뜀)` : ''}`
     );
@@ -131,11 +141,20 @@ const AttendanceCheck = () => {
     <div className="info-page">
       <div className="info-toolbar">
         <h2>등원 확인</h2>
-        <button className="info-btn" onClick={() => runCheck(null)} disabled={loading}>
+        <button
+          className={`info-btn ${activeSlot === 'manual' ? '' : 'secondary'}`}
+          onClick={() => runCheck(null)}
+          disabled={loading}
+        >
           지금 확인
         </button>
         {PRESETS.map((preset) => (
-          <button key={preset.slot} className="info-btn secondary" onClick={() => runCheck(preset)} disabled={loading}>
+          <button
+            key={preset.slot}
+            className={`info-btn ${activeSlot === preset.slot ? '' : 'secondary'}`}
+            onClick={() => runCheck(preset)}
+            disabled={loading}
+          >
             {preset.label} 기준
           </button>
         ))}
@@ -174,6 +193,7 @@ const AttendanceCheck = () => {
               tone={selectedFilter.tone}
               list={rows.filter(selectedFilter.match)}
               lateIds={lateIds}
+              lateDone={lateDone}
               onToggleLate={toggleLate}
             />
           ) : (
@@ -187,6 +207,7 @@ const AttendanceCheck = () => {
                   tone={group.tone}
                   list={list}
                   lateIds={lateIds}
+                  lateDone={lateDone}
                   onToggleLate={toggleLate}
                 />
               );
@@ -231,7 +252,7 @@ const AttendanceCheck = () => {
   );
 };
 
-const AttendanceTable = ({ title, tone, list, lateIds, onToggleLate }) => {
+const AttendanceTable = ({ title, tone, list, lateIds, lateDone, onToggleLate }) => {
   const canMark = list.some((r) => r.result === '미등원');
   return (
   <section className={`att-group ${tone}`}>
@@ -257,9 +278,12 @@ const AttendanceTable = ({ title, tone, list, lateIds, onToggleLate }) => {
             <tr key={r.user_id}>
               {canMark && (
                 <td className="center">
-                  {r.result === '미등원' && (
-                    <input type="checkbox" checked={lateIds.has(r.user_id)} onChange={() => onToggleLate(r.user_id)} />
-                  )}
+                  {r.result === '미등원' &&
+                    (lateDone.has(r.user_id) ? (
+                      <span className="late-done">지각 처리됨</span>
+                    ) : (
+                      <input type="checkbox" checked={lateIds.has(r.user_id)} onChange={() => onToggleLate(r.user_id)} />
+                    ))}
                 </td>
               )}
               <td>{r.seat_no ?? '-'}</td>

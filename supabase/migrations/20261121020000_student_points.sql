@@ -45,3 +45,15 @@ revoke execute on function public.award_weekly_merits(date) from public, anon, a
 -- 매주 월요일 00:10 (한국) = 일요일 15:10 UTC
 select cron.unschedule(jobid) from cron.job where jobname = 'award-weekly-merits';
 select cron.schedule('award-weekly-merits', '10 15 * * 0', 'select public.award_weekly_merits()');
+
+-- 상벌점 초기화 기록 (기록은 지우지 않고, 초기화 시점 이후만 합산)
+create table if not exists public.conduct_resets (
+  id          bigserial primary key,
+  user_id     uuid references public.profiles(id) on delete cascade,  -- null이면 전체 초기화
+  reset_at    timestamptz not null default now(),
+  created_by  uuid default auth.uid()
+);
+alter table public.conduct_resets enable row level security;
+drop policy if exists "conduct_resets admin all" on public.conduct_resets;
+create policy "conduct_resets admin all" on public.conduct_resets
+  for all using (public.is_admin()) with check (public.is_admin());

@@ -305,3 +305,23 @@
   cursor: pointer;
   text-decoration: underline;
 }
+
+.late-done {
+  font-size: 0.75rem;
+  color: #c62828;
+  font-weight: 600;
+}
+
+.conduct-pick-search {
+  width: 140px;
+}
+
+.name-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: #1a4fa0;
+  cursor: pointer;
+}
