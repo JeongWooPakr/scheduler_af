@@ -77,9 +77,8 @@ async function fetchSeats(): Promise<Seat[]> {
 
   // 1) 로그인 페이지에서 세션 쿠키와 숨은 값(act, 자동로그인 옵션)을 받습니다.
   const loginPage = await (await afFetch(jar, "/bbs3/login/login.php")).text();
-  const act = loginPage.match(/name=["']?act["']?[^>]*value=["']([^"']*)["']/i)?.[1]
-    ?? loginPage.match(/value=["']([^"']*)["'][^>]*name=["']?act["']?/i)?.[1]
-    ?? "";
+  // 예: <input type=hidden name=act value=ok>  (따옴표 없는 값도 처리)
+  const act = loginPage.match(/<input[^>]*name=["']?act["']?[^>]*value=["']?([^"'\s>]+)/i)?.[1] ?? "ok";
   const autoOption = loginPage.match(/<select[^>]*name=["']?login_auto["']?[\s\S]*?<option[^>]*value=["']([^"']*)["']/i)?.[1] ?? "";
 
   // 2) 로그인
@@ -102,6 +101,7 @@ async function fetchSeats(): Promise<Seat[]> {
   try {
     data = JSON.parse(text);
   } catch {
+    console.log("AF seat response", seatRes.status, "login status", loginRes.status, "len", text.length);
     throw new Error("Awesome Manager 로그인 또는 좌석 조회에 실패했습니다. 아이디/비밀번호를 확인해 주세요.");
   }
 

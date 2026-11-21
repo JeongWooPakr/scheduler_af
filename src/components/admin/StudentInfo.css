@@ -167,3 +167,39 @@
   color: #c62828;
   margin-top: 0.15rem;
 }
+
+.info-table td.notion-text {
+  white-space: pre-line;
+  min-width: 220px;
+  max-width: 360px;
+  vertical-align: top;
+}
+
+.info-table td.notion-text summary {
+  cursor: pointer;
+}
+
+.info-table td.muted {
+  color: #9e9e9e;
+}
+
+.info-btn.small {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.78rem;
+}
+
+.info-table tr.preview-row td {
+  background: #f8fafc;
+  white-space: normal;
+}
+
+.parent-preview {
+  width: 100% !important;
+  max-width: 520px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.5rem;
+  border: 1px solid #d4d8dd;
+  border-radius: 6px;
+  box-sizing: border-box;
+}

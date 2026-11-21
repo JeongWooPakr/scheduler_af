@@ -26,6 +26,37 @@ const StudentInfoManager = ({ students }) => {
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
   const [managedOnly, setManagedOnly] = useState(false);
+  const [notionByName, setNotionByName] = useState({});
+  const [notionStatus, setNotionStatus] = useState('');
+
+  // 노션 "학생 상담 리스트"에서 기본정보·최근 상담을 읽어 옵니다. (읽기 전용)
+  const loadNotion = async (round = 1) => {
+    setNotionStatus(
+      round === 1 ? '노션에서 상담 기록을 불러오는 중입니다...' : `노션에서 나머지 학생을 불러오는 중입니다... (${round}회차)`
+    );
+    const { data, error } = await supabase.functions.invoke('notion-students', { body: {} });
+    if (error || data?.error) {
+      let detail = data?.error || error.message;
+      try {
+        const body = await error?.context?.json?.();
+        if (body?.error) detail = body.error;
+      } catch (e) {
+        // 응답 본문이 없으면 기본 메시지를 씁니다.
+      }
+      setNotionStatus(`노션 불러오기 실패: ${detail}`);
+      return;
+    }
+    const map = {};
+    (data.students || []).forEach((s) => {
+      if (s.name) map[nameKey(s.name)] = s;
+    });
+    setNotionByName(map);
+    if (data.pending > 0 && round < 6) {
+      loadNotion(round + 1);
+      return;
+    }
+    setNotionStatus(`노션 학생 ${Object.keys(map).length}명의 상담 기록을 불러왔습니다.`);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -43,6 +74,8 @@ const StudentInfoManager = ({ students }) => {
       setLoading(false);
     };
     load();
+    loadNotion();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const rows = useMemo(() => {
@@ -52,11 +85,12 @@ const StudentInfoManager = ({ students }) => {
       .filter(({ student, info }) => {
         if (managedOnly && !info.is_managed) return false;
         if (!keyword) return true;
-        return [student.name, info.school, info.notes, String(info.seat_no || '')]
+        const notion = notionByName[nameKey(student.name)] || {};
+        return [student.name, notion.mentor, notion.basicInfo, notion.latestNote, String(info.seat_no || '')]
           .some((value) => (value || '').toLowerCase().includes(keyword));
       })
       .sort((a, b) => (Number(a.info.seat_no) || 999) - (Number(b.info.seat_no) || 999));
-  }, [students, infoById, search, managedOnly]);
+  }, [students, infoById, search, managedOnly, notionByName]);
 
   const updateField = (id, field, value) => {
     setInfoById((prev) => ({ ...prev, [id]: { ...(prev[id] || EMPTY_INFO), [field]: value } }));
@@ -145,7 +179,7 @@ const StudentInfoManager = ({ students }) => {
         <input
           type="search"
           className="student-search-input info-search"
-          placeholder="이름, 학교, 좌석, 특징 검색"
+          placeholder="이름, 좌석, 멘토, 상담 내용 검색"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
@@ -153,6 +187,9 @@ const StudentInfoManager = ({ students }) => {
           <input type="checkbox" checked={managedOnly} onChange={(e) => setManagedOnly(e.target.checked)} />
           관리형만 보기
         </label>
+        <button className="info-btn secondary" onClick={() => loadNotion()}>
+          노션 새로고침
+        </button>
         <button className="info-btn secondary" onClick={handleImport} disabled={busy}>
           Awesome Manager에서 가져오기
         </button>
@@ -161,6 +198,7 @@ const StudentInfoManager = ({ students }) => {
         </button>
       </div>
       {message && <p className="info-message">{message}</p>}
+      {notionStatus && <p className="info-message subtle">{notionStatus}</p>}
 
       <div className="info-table-wrap">
         <table className="info-table">
@@ -169,11 +207,9 @@ const StudentInfoManager = ({ students }) => {
               <th>관리형</th>
               <th>좌석</th>
               <th>이름</th>
-              <th>학교</th>
-              <th>학년</th>
-              <th>성별</th>
-              <th>내신 등급대</th>
-              <th>특징</th>
+              <th>멘토</th>
+              <th>기본정보 (노션)</th>
+              <th>최근 상담 (노션)</th>
               <th>학생 연락처</th>
               <th>학부모 연락처</th>
             </tr>
@@ -198,37 +234,7 @@ const StudentInfoManager = ({ students }) => {
                   />
                 </td>
                 <td className="name">{student.name}</td>
-                <td>
-                  <input value={info.school} onChange={(e) => updateField(student.id, 'school', e.target.value)} />
-                </td>
-                <td>
-                  <input
-                    className="narrow"
-                    value={info.grade}
-                    onChange={(e) => updateField(student.id, 'grade', e.target.value)}
-                  />
-                </td>
-                <td>
-                  <select value={info.gender} onChange={(e) => updateField(student.id, 'gender', e.target.value)}>
-                    <option value="">-</option>
-                    <option value="남">남</option>
-                    <option value="여">여</option>
-                  </select>
-                </td>
-                <td>
-                  <input
-                    placeholder="예: 1~2등급"
-                    value={info.naesin_band}
-                    onChange={(e) => updateField(student.id, 'naesin_band', e.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    className="wide"
-                    value={info.notes}
-                    onChange={(e) => updateField(student.id, 'notes', e.target.value)}
-                  />
-                </td>
+                <NotionCells notion={notionByName[nameKey(student.name)]} />
                 <td>
                   <input
                     type="tel"
@@ -254,6 +260,47 @@ const StudentInfoManager = ({ students }) => {
     </div>
   );
 };
+
+const NotionCells = ({ notion }) => {
+  if (!notion) {
+    return (
+      <>
+        <td className="muted">-</td>
+        <td className="muted" colSpan={2}>
+          노션에 같은 이름의 페이지가 없습니다
+        </td>
+      </>
+    );
+  }
+  return (
+    <>
+      <td>{notion.mentor || '-'}</td>
+      <td className="notion-text">{notion.basicInfo || '-'}</td>
+      <td className="notion-text">
+        {notion.latestDate ? (
+          <details>
+            <summary>
+              <strong>{notion.latestDate}</strong> 상담 ({notion.sessionCount}회째){' '}
+              <a href={notion.url} target="_blank" rel="noreferrer">
+                노션 열기
+              </a>
+            </summary>
+            {notion.latestNote || '(내용 없음)'}
+          </details>
+        ) : (
+          <a href={notion.url} target="_blank" rel="noreferrer">
+            노션 열기
+          </a>
+        )}
+      </td>
+    </>
+  );
+};
+
+// "김 민 경"과 "김민경"을 같은 이름으로 봅니다.
+function nameKey(name) {
+  return (name || '').replace(/\s+/g, '');
+}
 
 function nullToEmpty(row) {
   const out = {};
