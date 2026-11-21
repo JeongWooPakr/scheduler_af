@@ -108,3 +108,69 @@
   border-color: #007bff;
   color: #fff;
 }
+
+/* ---------- 휴대폰: 메뉴를 위로 ---------- */
+@media (max-width: 768px) {
+  .admin-container {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .student-sidebar {
+    width: 100%;
+    box-sizing: border-box;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 0.5rem 0.75rem;
+    overflow: visible;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .view-switcher {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.2rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .view-switcher button {
+    flex: 0 0 auto;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .student-sidebar h2 {
+    display: none;
+  }
+
+  .student-search-input {
+    margin-bottom: 0.5rem;
+    font-size: 16px; /* iOS 자동 확대 방지 */
+  }
+
+  .student-sidebar ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .student-sidebar li {
+    padding: 0.4rem 0.7rem;
+    border: 1px solid #d4d8dd;
+    background: #fff;
+    font-size: 0.85rem;
+  }
+
+  .timetable-view {
+    padding: 0.75rem;
+    overflow: visible;
+  }
+}

@@ -325,3 +325,66 @@
   color: #1a4fa0;
   cursor: pointer;
 }
+
+/* ---------- 휴대폰 ---------- */
+@media (max-width: 768px) {
+  .info-toolbar h2 {
+    width: 100%;
+    margin: 0;
+  }
+
+  .info-search,
+  .conduct-pick-search,
+  .conduct-note {
+    width: 100% !important;
+  }
+
+  .info-toolbar input[type='search'],
+  .conduct-entry input,
+  .conduct-entry select {
+    font-size: 16px; /* iOS 자동 확대 방지 */
+  }
+
+  .conduct-entry select,
+  .conduct-entry input[type='date'] {
+    flex: 1 1 45%;
+  }
+
+  .conduct-entry .info-btn {
+    flex: 1 1 30%;
+    padding: 0.6rem 0.4rem;
+    font-size: 0.9rem;
+  }
+
+  .info-toolbar .info-btn {
+    flex: 1 1 auto;
+    padding: 0.55rem 0.6rem;
+  }
+
+  .att-summary {
+    gap: 0.4rem;
+  }
+
+  .att-summary > span {
+    width: 100%;
+  }
+
+  .late-bar {
+    flex-wrap: wrap;
+  }
+
+  .info-table {
+    font-size: 0.85rem;
+  }
+
+  .info-table th,
+  .info-table td {
+    padding: 0.45rem 0.4rem;
+  }
+
+  .info-table-wrap,
+  .att-group {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
