@@ -17,6 +17,16 @@ const GROUPS = [
   { key: '좌석없음', title: 'Awesome Manager 좌석을 못 찾음', tone: 'muted' },
 ];
 
+// 요약 칸을 누르면 해당 명단만 보여 줍니다.
+const FILTERS = [
+  { key: 'expected', label: '등원 대상', tone: '', match: (r) => r.result !== '외부일정' },
+  { key: '등원', label: '등원', tone: 'ok', match: (r) => r.result === '등원' },
+  { key: '미등원', label: '미등원', tone: 'danger', match: (r) => r.result === '미등원' },
+  { key: '외출', label: '외출', tone: 'warn', match: (r) => r.result === '외출' },
+  { key: '외부일정', label: '외부 일정', tone: 'muted', match: (r) => r.result === '외부일정' },
+  { key: '좌석없음', label: '좌석 못 찾음', tone: 'muted', match: (r) => r.result === '좌석없음' },
+];
+
 const todayKst = () => new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
 
 const AttendanceCheck = () => {
@@ -24,6 +34,7 @@ const AttendanceCheck = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [history, setHistory] = useState([]);
+  const [selected, setSelected] = useState(null);
 
   const loadHistory = useCallback(async () => {
     const { data } = await supabase
@@ -49,11 +60,13 @@ const AttendanceCheck = () => {
       return;
     }
     setResult(data);
+    setSelected(null);
   };
 
   const rows = result?.rows || [];
   const expected = rows.filter((r) => r.result !== '외부일정');
   const present = expected.filter((r) => r.result === '등원');
+  const selectedFilter = FILTERS.find((f) => f.key === selected);
 
   // 오늘 기록: 확인 회차별 미등원 명단
   const historyByRun = history.reduce((acc, row) => {
@@ -67,7 +80,7 @@ const AttendanceCheck = () => {
   return (
     <div className="info-page">
       <div className="info-toolbar">
-        <h2>미등원 확인</h2>
+        <h2>등원 확인</h2>
         <button className="info-btn" onClick={() => runCheck(null)} disabled={loading}>
           지금 확인
         </button>
@@ -89,48 +102,42 @@ const AttendanceCheck = () => {
         <>
           <div className="att-summary">
             <span>{result.date} ({result.day}) {result.time} 기준</span>
-            <span>등원 대상 {expected.length}명</span>
-            <span className="ok">등원 {present.length}명</span>
-            <span className="danger">미등원 {expected.filter((r) => r.result === '미등원').length}명</span>
-            <span>외부 일정 {rows.length - expected.length}명</span>
+            {FILTERS.map((f) => {
+              const count = rows.filter(f.match).length;
+              if (!count && ['외출', '좌석없음'].includes(f.key)) return null;
+              return (
+                <button
+                  key={f.key}
+                  className={`att-chip ${f.tone} ${selected === f.key ? 'active' : ''}`}
+                  onClick={() => setSelected(selected === f.key ? null : f.key)}
+                >
+                  {f.label} {count}명
+                </button>
+              );
+            })}
           </div>
+          <p className="info-message subtle">숫자를 누르면 명단이 나옵니다. 다시 누르면 기본 화면(미등원·외출 명단)으로 돌아갑니다.</p>
 
-          {GROUPS.map((group) => {
-            const list = rows.filter((r) => r.result === group.key);
-            if (!list.length) return null;
-            return (
-              <section key={group.key} className={`att-group ${group.tone}`}>
-                <h3>
-                  {group.title} ({list.length})
-                </h3>
-                <table className="info-table">
-                  <thead>
-                    <tr>
-                      <th>좌석</th>
-                      <th>이름</th>
-                      <th>좌석 상태</th>
-                      <th>학생 연락처</th>
-                      <th>학부모 연락처</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {list.map((r) => (
-                      <tr key={r.user_id}>
-                        <td>{r.seat_no ?? '-'}</td>
-                        <td className="name">
-                          {r.name}
-                          {r.af_name && r.af_name !== r.name ? ` (좌석: ${r.af_name})` : ''}
-                        </td>
-                        <td>{r.af_state || '없음'}</td>
-                        <td>{r.student_phone || '-'}</td>
-                        <td>{r.parent_phone || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-            );
-          })}
+          {selectedFilter ? (
+            <AttendanceTable
+              title={`${selectedFilter.label} (${rows.filter(selectedFilter.match).length})`}
+              tone={selectedFilter.tone}
+              list={rows.filter(selectedFilter.match)}
+            />
+          ) : (
+            GROUPS.map((group) => {
+              const list = rows.filter((r) => r.result === group.key);
+              if (!list.length) return null;
+              return (
+                <AttendanceTable
+                  key={group.key}
+                  title={`${group.title} (${list.length})`}
+                  tone={group.tone}
+                  list={list}
+                />
+              );
+            })
+          )}
 
           {expected.length > 0 && expected.length === present.length && (
             <p className="info-message">등원 대상 학생이 모두 입실했습니다.</p>
@@ -156,5 +163,44 @@ const AttendanceCheck = () => {
     </div>
   );
 };
+
+const AttendanceTable = ({ title, tone, list }) => (
+  <section className={`att-group ${tone}`}>
+    <h3>{title}</h3>
+    {list.length === 0 ? (
+      <p className="info-message subtle">해당 학생이 없습니다.</p>
+    ) : (
+      <table className="info-table">
+        <thead>
+          <tr>
+            <th>좌석</th>
+            <th>이름</th>
+            <th>결과</th>
+            <th>좌석 상태</th>
+            <th>외부 일정</th>
+            <th>학생 연락처</th>
+            <th>학부모 연락처</th>
+          </tr>
+        </thead>
+        <tbody>
+          {list.map((r) => (
+            <tr key={r.user_id}>
+              <td>{r.seat_no ?? '-'}</td>
+              <td className="name">
+                {r.name}
+                {r.af_name && r.af_name !== r.name ? ` (좌석: ${r.af_name})` : ''}
+              </td>
+              <td>{r.result}</td>
+              <td>{r.af_state || '없음'}</td>
+              <td>{r.busy_title || '-'}</td>
+              <td>{r.student_phone || '-'}</td>
+              <td>{r.parent_phone || '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+  </section>
+);
 
 export default AttendanceCheck;

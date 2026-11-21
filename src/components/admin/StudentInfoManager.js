@@ -28,6 +28,7 @@ const StudentInfoManager = ({ students }) => {
   const [managedOnly, setManagedOnly] = useState(false);
   const [notionByName, setNotionByName] = useState({});
   const [notionStatus, setNotionStatus] = useState('');
+  const [previewId, setPreviewId] = useState(null);
 
   // 노션 "학생 상담 리스트"에서 기본정보·최근 상담을 읽어 옵니다. (읽기 전용)
   const loadNotion = async (round = 1) => {
@@ -86,7 +87,7 @@ const StudentInfoManager = ({ students }) => {
         if (managedOnly && !info.is_managed) return false;
         if (!keyword) return true;
         const notion = notionByName[nameKey(student.name)] || {};
-        return [student.name, notion.mentor, notion.basicInfo, notion.latestNote, String(info.seat_no || '')]
+        return [student.name, info.school, info.notes, notion.mentor, notion.latestNote, String(info.seat_no || '')]
           .some((value) => (value || '').toLowerCase().includes(keyword));
       })
       .sort((a, b) => (Number(a.info.seat_no) || 999) - (Number(b.info.seat_no) || 999));
@@ -179,7 +180,7 @@ const StudentInfoManager = ({ students }) => {
         <input
           type="search"
           className="student-search-input info-search"
-          placeholder="이름, 좌석, 멘토, 상담 내용 검색"
+          placeholder="이름, 좌석, 학교, 특징, 멘토, 상담 검색"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
@@ -207,16 +208,22 @@ const StudentInfoManager = ({ students }) => {
               <th>관리형</th>
               <th>좌석</th>
               <th>이름</th>
+              <th>학교</th>
+              <th>학년</th>
+              <th>성별</th>
+              <th>내신 등급대</th>
+              <th>특징</th>
               <th>멘토</th>
-              <th>기본정보 (노션)</th>
               <th>최근 상담 (노션)</th>
               <th>학생 연락처</th>
               <th>학부모 연락처</th>
+              <th>학부모 문자</th>
             </tr>
           </thead>
           <tbody>
             {rows.map(({ student, info }) => (
-              <tr key={student.id} className={dirtyIds.has(student.id) ? 'dirty' : ''}>
+              <React.Fragment key={student.id}>
+              <tr className={dirtyIds.has(student.id) ? 'dirty' : ''}>
                 <td className="center">
                   <input
                     type="checkbox"
@@ -234,6 +241,37 @@ const StudentInfoManager = ({ students }) => {
                   />
                 </td>
                 <td className="name">{student.name}</td>
+                <td>
+                  <input value={info.school} onChange={(e) => updateField(student.id, 'school', e.target.value)} />
+                </td>
+                <td>
+                  <input
+                    className="narrow"
+                    value={info.grade}
+                    onChange={(e) => updateField(student.id, 'grade', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <select value={info.gender} onChange={(e) => updateField(student.id, 'gender', e.target.value)}>
+                    <option value="">-</option>
+                    <option value="남">남</option>
+                    <option value="여">여</option>
+                  </select>
+                </td>
+                <td>
+                  <input
+                    placeholder="예: 1~2등급"
+                    value={info.naesin_band}
+                    onChange={(e) => updateField(student.id, 'naesin_band', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input
+                    className="wide"
+                    value={info.notes}
+                    onChange={(e) => updateField(student.id, 'notes', e.target.value)}
+                  />
+                </td>
                 <NotionCells notion={notionByName[nameKey(student.name)]} />
                 <td>
                   <input
@@ -251,7 +289,31 @@ const StudentInfoManager = ({ students }) => {
                     onChange={(e) => updateField(student.id, 'parent_phone', e.target.value)}
                   />
                 </td>
+                <td>
+                  <button
+                    className="info-btn secondary small"
+                    onClick={() => setPreviewId(previewId === student.id ? null : student.id)}
+                  >
+                    {previewId === student.id ? '닫기' : '미리보기'}
+                  </button>
+                </td>
               </tr>
+              {previewId === student.id && (
+                <tr className="preview-row">
+                  <td colSpan={13}>
+                    <textarea
+                      className="parent-preview"
+                      readOnly
+                      rows={6}
+                      value={buildParentMessage(student.name, notionByName[nameKey(student.name)])}
+                    />
+                    <p className="info-message subtle">
+                      진행률은 노션 교재 표(과목 | 교재 | 총량)와 상담 기록의 쪽수·강수로 계산합니다. 문자 발송 연동 전이라 미리보기만 됩니다.
+                    </p>
+                  </td>
+                </tr>
+              )}
+              </React.Fragment>
             ))}
           </tbody>
         </table>
@@ -266,16 +328,13 @@ const NotionCells = ({ notion }) => {
     return (
       <>
         <td className="muted">-</td>
-        <td className="muted" colSpan={2}>
-          노션에 같은 이름의 페이지가 없습니다
-        </td>
+        <td className="muted">노션 페이지 없음</td>
       </>
     );
   }
   return (
     <>
       <td>{notion.mentor || '-'}</td>
-      <td className="notion-text">{notion.basicInfo || '-'}</td>
       <td className="notion-text">
         {notion.latestDate ? (
           <details>
@@ -296,6 +355,23 @@ const NotionCells = ({ notion }) => {
     </>
   );
 };
+
+// 학부모 문자 내용. 교재 진행률(%)은 여기에만 넣습니다.
+function buildParentMessage(name, notion) {
+  const lines = [`[어썸팩토리 철산] ${name} 학생 학습 진행 안내`];
+  const materials = (notion?.materials || []).filter((m) => m.total);
+  if (!materials.length) {
+    lines.push('(노션에 교재 표가 아직 없어 진행률을 계산할 수 없습니다)');
+  } else {
+    materials.forEach((m) => {
+      const unit = m.unit === '강' ? '강' : 'p';
+      const progress = m.current == null ? '진행 기록 없음' : `${m.current}/${m.total}${unit} (${m.percent}%)`;
+      lines.push(`- ${m.subject} ${m.title}: ${progress}`);
+    });
+  }
+  if (notion?.latestDate) lines.push(`최근 상담: ${notion.latestDate}`);
+  return lines.join('\n');
+}
 
 // "김 민 경"과 "김민경"을 같은 이름으로 봅니다.
 function nameKey(name) {

@@ -69,7 +69,7 @@ const AdminPage = () => {
             onClick={() => setActiveView('attendance')}
             className={activeView === 'attendance' ? 'active' : ''}
           >
-            미등원 확인
+            등원 확인
           </button>
         </div>
 
