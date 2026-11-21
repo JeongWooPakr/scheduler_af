@@ -1,6 +1,7 @@
 .admin-container {
   display: flex;
-  height: 100vh;
+  /* 위쪽 메뉴(헤더)를 뺀 나머지 높이에 딱 맞춰서, 스크롤이 두 번 생기지 않게 합니다. */
+  height: 100%;
   width: 100%;
 }
 
