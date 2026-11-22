@@ -487,3 +487,176 @@
   display: flex;
   gap: 6px;
 }
+
+/* 상벌점 좌석 배치도 */
+.view-switch {
+  display: inline-flex;
+  border: 1px solid #d4d8dd;
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.view-switch button {
+  border: 0;
+  background: #fff;
+  padding: 6px 14px;
+  cursor: pointer;
+  font: inherit;
+}
+.view-switch button.active {
+  background: #2f6fde;
+  color: #fff;
+}
+.seatmap-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.seatmap-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  background: #fafbfc;
+}
+.seatmap-sizer {
+  position: relative;
+}
+.seatmap-canvas {
+  overflow: hidden;
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+}
+.seatmap-room {
+  position: absolute;
+  background: #f1f4f8;
+  border-radius: 4px;
+}
+.seatmap-wall {
+  position: absolute;
+  background: #9aa3ad;
+}
+.seatmap-etc {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eceff3;
+  color: #8a939c;
+  font-size: 14px;
+  border-radius: 4px;
+}
+.seatmap-seat {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: 1px solid #c7ced6;
+  border-left-width: 5px;
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+  line-height: 1.15;
+  overflow: hidden;
+}
+.seatmap-seat .seat-no {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 10px;
+  color: #8a939c;
+}
+.seatmap-seat .seat-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.seatmap-seat .seat-badge {
+  font-size: 12px;
+  color: #555;
+}
+.seatmap-seat.empty,
+.seatmap-seat.unknown {
+  background: #f4f5f7;
+  border-color: #e1e4e8;
+  cursor: default;
+  color: #a0a7ae;
+}
+.seatmap-seat.in {
+  border-left-color: #2f9e44;
+}
+.seatmap-seat.out {
+  border-left-color: #f08c00;
+}
+.seatmap-seat.warn {
+  background: #fff4e0;
+}
+.seatmap-seat.over {
+  background: #ffe3e3;
+}
+.seatmap-seat.over .seat-badge {
+  color: #c92a2a;
+  font-weight: 700;
+}
+.seatmap-seat.selected {
+  outline: 3px solid #2f6fde;
+  outline-offset: 1px;
+  z-index: 1;
+}
+.seatmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 6px 0 10px;
+  font-size: 12px;
+  color: #666;
+}
+.seatmap-legend .lg {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  vertical-align: -2px;
+  border: 1px solid #c7ced6;
+}
+.seatmap-legend .lg.in {
+  background: #2f9e44;
+}
+.seatmap-legend .lg.out {
+  background: #f08c00;
+}
+.seatmap-legend .lg.warn {
+  background: #fff4e0;
+}
+.seatmap-legend .lg.over {
+  background: #ffe3e3;
+}
+.seatmap-pick {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border: 1px solid #2f6fde;
+  border-radius: 8px;
+  background: #f3f7ff;
+}
+.seatmap-pick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}

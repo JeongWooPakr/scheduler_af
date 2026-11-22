@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { CUTLINE, PENALTIES, PENALTY_POINTS, todayKst, weekStartKst } from './conductRules';
+import SeatMap from './SeatMap';
 import './StudentInfo.css';
 
 // 상벌점 탭: 벌점 입력, 학생별 누적 확인, 기록 삭제(잘못 누른 경우)
@@ -18,6 +19,22 @@ const StudentConduct = ({ students }) => {
   const [detailId, setDetailId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [resets, setResets] = useState([]);
+  const [seatNoById, setSeatNoById] = useState(new Map());
+  const [view, setView] = useState(() => {
+    try {
+      return localStorage.getItem('conduct-view') || 'map';
+    } catch (e) {
+      return 'map';
+    }
+  });
+  const changeView = (next) => {
+    setView(next);
+    try {
+      localStorage.setItem('conduct-view', next);
+    } catch (e) {
+      // 저장 못 해도 괜찮음
+    }
+  };
 
   const load = useCallback(async () => {
     const [{ data, error }, { data: infos }, { data: resetRows }] = await Promise.all([
@@ -26,13 +43,14 @@ const StudentConduct = ({ students }) => {
         .select('id, user_id, kind, points, note, occurred_on, created_at')
         .order('occurred_on', { ascending: false })
         .order('created_at', { ascending: false }),
-      supabase.from('student_info').select('user_id, is_managed'),
+      supabase.from('student_info').select('user_id, is_managed, seat_no'),
       supabase.from('conduct_resets').select('user_id, reset_at'),
     ]);
     setResets(resetRows || []);
     if (error) setMessage(`상벌점을 불러오지 못했습니다: ${error.message}`);
     setRecords(data || []);
     setManagedIds(new Set((infos || []).filter((i) => i.is_managed).map((i) => i.user_id)));
+    setSeatNoById(new Map((infos || []).filter((i) => i.seat_no).map((i) => [i.user_id, i.seat_no])));
     setLoading(false);
   }, []);
 
@@ -191,6 +209,74 @@ const StudentConduct = ({ students }) => {
       </section>
       {message && <p className="info-message">{message}</p>}
 
+      <div className="view-switch">
+        <button className={view === 'map' ? 'active' : ''} onClick={() => changeView('map')}>
+          좌석 배치도
+        </button>
+        <button className={view === 'list' ? 'active' : ''} onClick={() => changeView('list')}>
+          목록
+        </button>
+      </div>
+
+      {view === 'map' && (
+        <>
+          <SeatMap
+            students={students}
+            seatNoById={seatNoById}
+            selectedId={targetId}
+            onPick={(st) => {
+              setTargetId(st.id);
+              setPickSearch('');
+            }}
+            seatClass={(st) => {
+              const p = summary.get(st.id)?.penalty || 0;
+              if (p >= CUTLINE) return 'over';
+              if (p >= CUTLINE / 2) return 'warn';
+              return '';
+            }}
+            renderBadge={(st) => {
+              const row = summary.get(st.id);
+              return row ? `${row.penalty}점` : '';
+            }}
+          />
+          {targetId && summary.get(targetId) && (
+            <div className="seatmap-pick">
+              <div>
+                <strong>{nameById.get(targetId)}</strong> · 누적 {summary.get(targetId).penalty}점 · 이번 주{' '}
+                {summary.get(targetId).week}점 · 상점 {summary.get(targetId).merit}점
+                <span className="info-message subtle"> ({date}{note.trim() ? ` · ${note.trim()}` : ''})</span>
+              </div>
+              <div className="seatmap-pick-actions">
+                {PENALTIES.map((p) => (
+                  <button
+                    key={p.kind}
+                    className="info-btn danger-btn small"
+                    disabled={busy}
+                    onClick={() => addPenalty(p.kind)}
+                  >
+                    {p.kind} +{p.points}
+                  </button>
+                ))}
+                <button
+                  className="info-btn secondary small"
+                  onClick={() => {
+                    changeView('list');
+                    setDetailId(targetId);
+                  }}
+                >
+                  기록 보기
+                </button>
+                <button className="link-btn" onClick={() => setTargetId('')}>
+                  선택 해제
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {view === 'list' && (
+      <>
       <div className="info-toolbar">
         <input
           type="search"
@@ -275,6 +361,8 @@ const StudentConduct = ({ students }) => {
         </table>
         {rows.length === 0 && <p className="student-search-empty">표시할 학생이 없습니다.</p>}
       </div>
+      </>
+      )}
     </div>
   );
 };

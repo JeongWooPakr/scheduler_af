@@ -13,6 +13,7 @@
 // 호출 예시 (body, 모두 선택)
 //   { "action": "check", "time": "09:05", "slot": "morning", "record": true }
 //   { "action": "seats" }   // 좌석 원본 (학생 정보 가져오기용)
+//   { "action": "layout" }  // 좌석 배치도 (좌석 위치, 방, 벽)
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -32,7 +33,13 @@ type Seat = {
   grade: string;
   state: string; // 입실 / 퇴실 / 외출 / ""
   room: string;
+  x: number;
+  y: number;
 };
+
+type Box = { no?: string; x: number; y: number; w: number; h: number; name?: string };
+type Layout = { rooms: Box[]; walls: Box[]; etc: Box[] };
+let lastLayout: Layout = { rooms: [], walls: [], etc: [] };
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -97,13 +104,29 @@ async function fetchSeats(): Promise<Seat[]> {
     body: "mode=load",
   });
   const text = await seatRes.text();
-  let data: { seat_info?: Record<string, string | null>[] };
+  let data: {
+    seat_info?: Record<string, string | null>[];
+    rooms_info?: Record<string, string | null>[];
+    walls_info?: Record<string, string | null>[];
+    etc_info?: Record<string, string | null>[];
+  };
   try {
     data = JSON.parse(text);
   } catch {
     console.log("AF seat response", seatRes.status, "login status", loginRes.status, "len", text.length);
     throw new Error("Awesome Manager 로그인 또는 좌석 조회에 실패했습니다. 아이디/비밀번호를 확인해 주세요.");
   }
+
+  const box = (list: Record<string, string | null>[] | undefined, p: string) =>
+    (list || []).map((b) => ({
+      no: p === "room" ? String(b.room_no || "") : undefined,
+      x: Number(b[`${p}_x`]) || 0,
+      y: Number(b[`${p}_y`]) || 0,
+      w: Number(b[`${p}_w`]) || 0,
+      h: Number(b[`${p}_h`]) || 0,
+      name: p === "etc" ? b.etc_name || "" : undefined,
+    }));
+  lastLayout = { rooms: box(data.rooms_info, "room"), walls: box(data.walls_info, "walls"), etc: box(data.etc_info, "etc") };
 
   return (data.seat_info || []).map((s) => ({
     seatNo: Number(s.seat_no),
@@ -112,6 +135,8 @@ async function fetchSeats(): Promise<Seat[]> {
     grade: (s.s_grade || s.fs_grade || "").trim(),
     state: (s.seat_state || s.fstate || "").trim(),
     room: s.seat_room || "",
+    x: Number(s.seat_x) || 0,
+    y: Number(s.seat_y) || 0,
   }));
 }
 
@@ -160,6 +185,15 @@ Deno.serve(async (req) => {
 
     const seats = await fetchSeats();
     if (action === "seats") return json({ seats: seats.filter((s) => s.name) });
+    if (action === "layout") {
+      // AF 좌석 좌표는 방 안에서의 위치라서, 방 위치를 더해 전체 도면 좌표로 바꿉니다.
+      const roomByNo = new Map(lastLayout.rooms.map((r) => [r.no, r]));
+      const placed = seats.map((s) => {
+        const room = roomByNo.get(s.room);
+        return { ...s, x: s.x + (room?.x || 0), y: s.y + (room?.y || 0) };
+      });
+      return json({ seats: placed, ...lastLayout });
+    }
 
     const kst = nowKst();
     const checkMinutes = body.time ? toMinutes(body.time) : kst.minutes;
